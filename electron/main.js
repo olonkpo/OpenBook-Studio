@@ -5,8 +5,16 @@
 
 const { app, BrowserWindow, shell } = require('electron');
 const path = require('path');
+const fs = require('fs');
 const { spawn } = require('child_process');
 const http = require('http');
+
+// Log crashes to a file for debugging
+process.on('uncaughtException', err => {
+  try {
+    fs.appendFileSync(path.join(__dirname, '..', 'crash.log'), `[${new Date().toISOString()}] ${err.stack || err.message}\n`);
+  } catch { /* best-effort */ }
+});
 
 require('dotenv').config({ path: path.join(__dirname, '..', '.env') });
 
@@ -80,7 +88,7 @@ function createWindow() {
       preload: path.join(__dirname, 'preload.js'),
       contextIsolation: true,   // Security: isolate renderer from Node.js
       nodeIntegration: false,   // Security: no Node.js in renderer
-      sandbox: true,            // Safe with contextIsolation + nodeIntegration: false
+      sandbox: false,           // Required for preload to access process.platform
     },
   });
 

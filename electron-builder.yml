@@ -23,7 +23,7 @@ files:
 
 # Unpack native addons so better-sqlite3 works in packaged builds
 asarUnpack:
-  - "backend/node_modules/better-sqlite3/build/**/*"
+  - "backend/node_modules/better-sqlite3/**/*"
 
 directories:
   output: dist
