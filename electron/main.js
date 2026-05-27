@@ -9,12 +9,10 @@ const fs = require('fs');
 const { spawn } = require('child_process');
 const http = require('http');
 
-// Log crashes to a file for debugging
+// Log crashes to a file for debugging (registers early, path is updated after app.ready)
+let crashLogPath = path.join(__dirname, '..', 'crash.log');
 process.on('uncaughtException', err => {
-  try {
-    const logDir = app.isPackaged ? app.getPath('userData') : path.join(__dirname, '..');
-    fs.appendFileSync(path.join(logDir, 'crash.log'), `[${new Date().toISOString()}] ${err.stack || err.message}\n`);
-  } catch { /* best-effort */ }
+  try { fs.appendFileSync(crashLogPath, `[${new Date().toISOString()}] ${err.stack || err.message}\n`); } catch { /* best-effort */ }
 });
 
 require('dotenv').config({ path: path.join(__dirname, '..', '.env') });
@@ -27,27 +25,20 @@ let backendProcess = null;
 
 // ── Spawn the backend Express server ─────────────────────────────────────────
 function startBackend() {
-  // In a packaged build the backend is unpacked from the asar archive to:
-  //   <Resources>/app.asar.unpacked/backend/server.js
-  // In dev it lives at the normal relative path.
-  const backendPath = app.isPackaged
-    ? path.join(process.resourcesPath, 'app.asar.unpacked', 'backend', 'server.js')
-    : path.join(__dirname, '..', 'backend', 'server.js');
+  const backendPath = isDev
+    ? path.join(__dirname, '..', 'backend', 'server.js')
+    : path.join(process.resourcesPath, 'app.asar.unpacked', 'backend', 'server.js');
 
-  // In packaged builds use Electron's own Node runtime (ELECTRON_RUN_AS_NODE=1)
-  // so we don't depend on the user having Node.js installed.
-  // In dev just use the system node.
-  const spawnBin = app.isPackaged ? process.execPath : 'node';
-  const spawnEnv = {
-    ...process.env,
-    NODE_ENV: isDev ? 'development' : 'production',
-    PORT: BACKEND_PORT,
-    APPDATA_PATH: app.getPath('userData'),
-  };
-  if (app.isPackaged) spawnEnv.ELECTRON_RUN_AS_NODE = '1';
+  const spawnBin = isDev ? 'node' : process.execPath;
+  const spawnEnv = isDev ? {} : { ELECTRON_RUN_AS_NODE: '1' };
 
   backendProcess = spawn(spawnBin, [backendPath], {
-    env: spawnEnv,
+    env: {
+      ...process.env,
+      ...spawnEnv,
+      NODE_ENV: isDev ? 'development' : 'production',
+      PORT: BACKEND_PORT,
+    },
     stdio: isDev ? 'inherit' : 'pipe',
   });
 
@@ -135,9 +126,15 @@ function createWindow() {
 
 // ── App lifecycle ─────────────────────────────────────────────────────────────
 app.whenReady().then(async () => {
+  // Update crash log path to userData (writable outside asar)
+  crashLogPath = path.join(app.getPath('userData'), 'crash.log');
+
   // Set native app menu
   const { buildMenu } = require('./menu');
   buildMenu();
+
+  // Pass Electron's user-data path to the backend so SQLite lands in the right folder
+  process.env.APPDATA_PATH = app.getPath('userData');
 
   // Start backend then open window
   startBackend();

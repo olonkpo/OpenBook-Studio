@@ -44,8 +44,7 @@ files:
 # (asar archives cannot be read by a standalone node process)
 
 asarUnpack:
-
-- "backend/**/*"
+  - "backend/**/*"
 
 directories:
 
