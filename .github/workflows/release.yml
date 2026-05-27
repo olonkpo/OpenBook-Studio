@@ -22,11 +22,8 @@ jobs:
         with:
           node-version: '22'
 
-      - name: Install root dependencies
+      - name: Install dependencies (root + backend via postinstall)
         run: npm install
-
-      - name: Install backend dependencies
-        run: cd backend && npm install
 
       - name: Build macOS installer
         run: npm run build:mac
@@ -53,11 +50,8 @@ jobs:
         with:
           node-version: '22'
 
-      - name: Install root dependencies
+      - name: Install dependencies (root + backend via postinstall)
         run: npm install
-
-      - name: Install backend dependencies
-        run: cd backend && npm install
 
       - name: Build Windows installer
         run: npm run build:win

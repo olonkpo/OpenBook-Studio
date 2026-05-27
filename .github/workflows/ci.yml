@@ -23,11 +23,8 @@ jobs:
         with:
           node-version: '22'
 
-      - name: Install root dependencies
+      - name: Install dependencies (root + backend via postinstall)
         run: npm install
-
-      - name: Install backend dependencies
-        run: cd backend && npm install
 
       - name: Run ESLint
         run: npm run lint
