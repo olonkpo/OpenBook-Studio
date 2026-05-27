@@ -19,7 +19,7 @@
     "lint:fix": "eslint \"**/*.js\" --ignore-path .eslintignore --fix",
     "format": "prettier --write \"**/*.{js,json,css,html,md}\" --ignore-path .prettierignore",
     "test": "echo \"Tests run here — add your test runner in Phase 2\"",
-    "postinstall": "cd backend && npm install"
+    "postinstall": "cd backend && npm install --install-strategy=nested"
   },
   "devDependencies": {
     "@electron/rebuild": "^3.6.0",

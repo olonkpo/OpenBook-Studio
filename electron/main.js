@@ -46,6 +46,13 @@ function startBackend() {
     console.error('[Electron] Failed to start backend:', err);
   });
 
+  if (backendProcess.stdout) {
+    backendProcess.stdout.on('data', d => process.stdout.write(`[Backend] ${d}`));
+  }
+  if (backendProcess.stderr) {
+    backendProcess.stderr.on('data', d => process.stderr.write(`[Backend] ${d}`));
+  }
+
   backendProcess.on('exit', code => {
     if (code !== 0) {
       console.error(`[Electron] Backend exited with code ${code}`);
