@@ -12,7 +12,8 @@ const http = require('http');
 // Log crashes to a file for debugging
 process.on('uncaughtException', err => {
   try {
-    fs.appendFileSync(path.join(__dirname, '..', 'crash.log'), `[${new Date().toISOString()}] ${err.stack || err.message}\n`);
+    const logDir = app.isPackaged ? app.getPath('userData') : path.join(__dirname, '..');
+    fs.appendFileSync(path.join(logDir, 'crash.log'), `[${new Date().toISOString()}] ${err.stack || err.message}\n`);
   } catch { /* best-effort */ }
 });
 
@@ -26,15 +27,28 @@ let backendProcess = null;
 
 // ── Spawn the backend Express server ─────────────────────────────────────────
 function startBackend() {
-  const backendPath = path.join(__dirname, '..', 'backend', 'server.js');
+  // In a packaged build the backend is unpacked from the asar archive to:
+  //   <Resources>/app.asar.unpacked/backend/server.js
+  // In dev it lives at the normal relative path.
+  const backendPath = app.isPackaged
+    ? path.join(process.resourcesPath, 'app.asar.unpacked', 'backend', 'server.js')
+    : path.join(__dirname, '..', 'backend', 'server.js');
 
-  backendProcess = spawn('node', [backendPath], {
-    env: {
-      ...process.env,
-      NODE_ENV: isDev ? 'development' : 'production',
-      PORT: BACKEND_PORT,
-    },
-    stdio: isDev ? 'inherit' : 'pipe', // Show backend logs in dev
+  // In packaged builds use Electron's own Node runtime (ELECTRON_RUN_AS_NODE=1)
+  // so we don't depend on the user having Node.js installed.
+  // In dev just use the system node.
+  const spawnBin = app.isPackaged ? process.execPath : 'node';
+  const spawnEnv = {
+    ...process.env,
+    NODE_ENV: isDev ? 'development' : 'production',
+    PORT: BACKEND_PORT,
+    APPDATA_PATH: app.getPath('userData'),
+  };
+  if (app.isPackaged) spawnEnv.ELECTRON_RUN_AS_NODE = '1';
+
+  backendProcess = spawn(spawnBin, [backendPath], {
+    env: spawnEnv,
+    stdio: isDev ? 'inherit' : 'pipe',
   });
 
   backendProcess.on('error', err => {
@@ -124,9 +138,6 @@ app.whenReady().then(async () => {
   // Set native app menu
   const { buildMenu } = require('./menu');
   buildMenu();
-
-  // Pass Electron's user-data path to the backend so SQLite lands in the right folder
-  process.env.APPDATA_PATH = app.getPath('userData');
 
   // Start backend then open window
   startBackend();
