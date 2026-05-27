@@ -25,6 +25,9 @@ jobs:
       - name: Install dependencies (root + backend via postinstall)
         run: npm install
 
+      - name: Rebuild native module for Electron
+        run: npm run rebuild
+
       - name: Build macOS installer
         run: npm run build:mac
         env:
@@ -52,6 +55,9 @@ jobs:
 
       - name: Install dependencies (root + backend via postinstall)
         run: npm install
+
+      - name: Rebuild native module for Electron
+        run: npm run rebuild
 
       - name: Build Windows installer
         run: npm run build:win

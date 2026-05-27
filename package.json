@@ -14,6 +14,7 @@
     "build:backend": "echo 'Backend has no build step — Node.js runs directly'",
     "build:mac": "electron-builder --mac",
     "build:win": "electron-builder --win",
+    "rebuild": "npx electron-rebuild -f -w better-sqlite3 -p backend",
     "lint": "eslint \"**/*.js\" --ignore-path .eslintignore",
     "lint:fix": "eslint \"**/*.js\" --ignore-path .eslintignore --fix",
     "format": "prettier --write \"**/*.{js,json,css,html,md}\" --ignore-path .prettierignore",
@@ -21,6 +22,7 @@
     "postinstall": "cd backend && npm install"
   },
   "devDependencies": {
+    "@electron/rebuild": "^3.6.0",
     "concurrently": "^8.2.2",
     "electron": "^30.0.0",
     "electron-builder": "^24.13.3",
